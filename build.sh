@@ -1,0 +1,1 @@
+mvn clean source:jar install -DskipTests -pl parquet-hadoop

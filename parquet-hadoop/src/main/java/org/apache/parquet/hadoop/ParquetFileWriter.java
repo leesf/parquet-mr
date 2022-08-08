@@ -169,6 +169,7 @@ public class ParquetFileWriter {
 
   private final CRC32 crc;
   private boolean pageWriteChecksumEnabled;
+  private String filename;
 
   /**
    * Captures the order in which methods should be called
@@ -311,6 +312,7 @@ public class ParquetFileWriter {
                            int statisticsTruncateLength, boolean pageWriteChecksumEnabled,
                            FileEncryptionProperties encryptionProperties)
     throws IOException {
+    this.filename = file.getPath();
     TypeUtil.checkValidWriteSchema(schema);
 
     this.schema = schema;
@@ -444,6 +446,10 @@ public class ParquetFileWriter {
 
     columnIndexBuilder = ColumnIndexBuilder.getBuilder(currentChunkType, columnIndexTruncateLength);
     offsetIndexBuilder = OffsetIndexBuilder.getBuilder();
+  }
+
+  public String getFilename() {
+    return filename;
   }
 
   /**

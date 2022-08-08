@@ -37,9 +37,14 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.bytes.BytesInput;
 import org.apache.parquet.compression.CompressionCodecFactory;
+import org.apache.parquet.hadoop.codec.SnappyCompressor;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CodecFactory implements CompressionCodecFactory {
+
+  private static final Logger LOG = LoggerFactory.getLogger(CodecFactory.class);
 
   protected static final Map<String, CompressionCodec> CODEC_BY_NAME = Collections
       .synchronizedMap(new HashMap<String, CompressionCodec>());
@@ -162,6 +167,11 @@ public class CodecFactory implements CompressionCodecFactory {
           // null compressor for non-native gzip
           compressor.reset();
         }
+
+        if (compressor instanceof SnappyCompressor) {
+          ((SnappyCompressor) compressor).reserve((int) bytes.size());
+        }
+
         CompressionOutputStream cos = codec.createOutputStream(compressedOutBuffer, compressor);
         bytes.writeAllTo(cos);
         cos.finish();
@@ -174,10 +184,24 @@ public class CodecFactory implements CompressionCodecFactory {
     @Override
     public void release() {
       if (compressor != null) {
+        if (compressor instanceof SnappyCompressor) {
+          ((SnappyCompressor) compressor).trimToSize(0);
+        }
         CodecPool.returnCompressor(compressor);
       }
     }
 
+    @Override
+    public long getDirectMemorySize() {
+      if (compressor instanceof SnappyCompressor) {
+        return ((SnappyCompressor) compressor).getDirectBufferUsed();
+      }
+
+      LOG.warn("Do not support monitoring direct memory usage for codec: {}", codec);
+      return 0;
+    }
+
+    @Override
     public CompressionCodecName getCodecName() {
       return codecName;
     }
@@ -264,6 +288,9 @@ public class CodecFactory implements CompressionCodecFactory {
     public abstract BytesInput compress(BytesInput bytes) throws IOException;
     public abstract CompressionCodecName getCodecName();
     public abstract void release();
+    public long getDirectMemorySize() {
+      return 0;
+    }
   }
 
   /**

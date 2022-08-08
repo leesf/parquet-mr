@@ -305,6 +305,18 @@ public class ParquetWriter<T> implements Closeable {
         encodingProps);
   }
 
+  public long getCompressorMemoryUsage() {
+    return writer.getCompressorMemoryUsage();
+  }
+
+  public long getAllocatedSize() {
+    return writer.getAllocatedSize();
+  }
+
+  public long getBufferedSize() {
+    return writer.getBufferedSize();
+  }
+
   public void write(T object) throws IOException {
     try {
       writer.write(object);

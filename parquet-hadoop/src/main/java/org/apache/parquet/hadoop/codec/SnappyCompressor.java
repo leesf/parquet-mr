@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -83,25 +83,44 @@ public class SnappyCompressor implements Compressor {
 
     // Return compressed output up to 'len'
     int numBytes = Math.min(len, outputBuffer.remaining());
-    outputBuffer.get(buffer, off, numBytes);    
+    outputBuffer.get(buffer, off, numBytes);
     bytesWritten += numBytes;
-    return numBytes;	    
+    return numBytes;
+  }
+
+  public void trimToSize(int size) {
+    if (inputBuffer.capacity() <= size) {
+      return;
+    }
+    CleanUtil.cleanDirectBuffer(inputBuffer);
+    CleanUtil.cleanDirectBuffer(outputBuffer);
+    inputBuffer = ByteBuffer.allocateDirect(size);
+    outputBuffer = ByteBuffer.allocateDirect(size);
+  }
+
+  /**
+   * reserve input buffer capacity to the given size
+   */
+  public void reserve(int size) {
+    if (size <= inputBuffer.capacity()) {
+      return;
+    }
+    ByteBuffer tmp = ByteBuffer.allocateDirect(size);
+    inputBuffer.rewind();
+    tmp.put(inputBuffer);
+    ByteBuffer oldBuffer = inputBuffer;
+    inputBuffer = tmp;
+    CleanUtil.cleanDirectBuffer(oldBuffer);
   }
 
   @Override
-  public synchronized void setInput(byte[] buffer, int off, int len) {  
+  public synchronized void setInput(byte[] buffer, int off, int len) {
     SnappyUtil.validateBuffer(buffer, off, len);
-    
-    Preconditions.checkArgument(!outputBuffer.hasRemaining(), 
+    Preconditions.checkArgument(!outputBuffer.hasRemaining(),
         "Output buffer should be empty. Caller must call compress()");
 
     if (inputBuffer.capacity() - inputBuffer.position() < len) {
-      ByteBuffer tmp = ByteBuffer.allocateDirect(inputBuffer.position() + len);
-      inputBuffer.rewind();
-      tmp.put(inputBuffer);
-      ByteBuffer oldBuffer = inputBuffer;
-      inputBuffer = tmp;
-      CleanUtil.cleanDirectBuffer(oldBuffer);
+      reserve(inputBuffer.position() + len);
     } else {
       inputBuffer.limit(inputBuffer.position() + len);
     }
@@ -120,6 +139,10 @@ public class SnappyCompressor implements Compressor {
   @Override
   public synchronized void finish() {
     finishCalled = true;
+  }
+
+  public long getDirectBufferUsed() {
+    return inputBuffer.capacity() + outputBuffer.capacity();
   }
 
   @Override
@@ -146,7 +169,7 @@ public class SnappyCompressor implements Compressor {
 
   @Override
   public void reinit(Configuration c) {
-    reset();		
+    reset();
   }
 
   @Override
@@ -161,6 +184,6 @@ public class SnappyCompressor implements Compressor {
 
   @Override
   public void setDictionary(byte[] dictionary, int off, int len) {
-    // No-op		
+    // No-op
   }
 }

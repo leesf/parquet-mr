@@ -27,29 +27,31 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>parquet-hadoop</artifactId>
+  <version>1.12.2-adb-lakehouse-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Apache Parquet Hadoop</name>
   <url>https://parquet.apache.org</url>
 
   <properties>
+    <origin.project.version>1.12.2</origin.project.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.parquet</groupId>
       <artifactId>parquet-column</artifactId>
-      <version>${project.version}</version>
+      <version>${origin.project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.parquet</groupId>
       <artifactId>parquet-format-structures</artifactId>
-      <version>${project.version}</version>
+      <version>${origin.project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.parquet</groupId>
       <artifactId>parquet-column</artifactId>
-      <version>${project.version}</version>
+      <version>${origin.project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -68,7 +70,7 @@
     <dependency>
       <groupId>org.apache.parquet</groupId>
       <artifactId>parquet-jackson</artifactId>
-      <version>${project.version}</version>
+      <version>${origin.project.version}</version>
     </dependency>
     <dependency>
       <groupId>${jackson.groupId}</groupId>

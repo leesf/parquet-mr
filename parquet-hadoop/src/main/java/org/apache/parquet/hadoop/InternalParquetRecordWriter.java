@@ -147,6 +147,18 @@ class InternalParquetRecordWriter<T> {
     return lastRowGroupEndPos + columnStore.getBufferedSize();
   }
 
+  public long getCompressorMemoryUsage() {
+    return compressor.getDirectMemorySize();
+  }
+
+  public long getAllocatedSize() {
+    return columnStore.getAllocatedSize();
+  }
+
+  public long getBufferedSize() {
+    return columnStore.getBufferedSize();
+  }
+
   private void checkBlockSizeReached() throws IOException {
     if (recordCount >= recordCountForNextMemCheck) { // checking the memory size is relatively expensive, so let's not do it for every record.
       long memSize = columnStore.getBufferedSize();
@@ -181,7 +193,12 @@ class InternalParquetRecordWriter<T> {
 
     if (recordCount > 0) {
       rowGroupOrdinal++;
-      parquetFileWriter.startBlock(recordCount);
+      try {
+        parquetFileWriter.startBlock(recordCount);
+      } catch (Throwable e) {
+        LOG.error("Error starting block for file: " + (parquetFileWriter.getFilename() == null ? "" : parquetFileWriter.getFilename()));
+        throw new RuntimeException(e);
+      }
       columnStore.flush();
       pageStore.flushToFileWriter(parquetFileWriter);
       recordCount = 0;
